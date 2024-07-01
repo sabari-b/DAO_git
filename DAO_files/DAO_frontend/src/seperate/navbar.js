@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import $ from "jquery";
+import $, { data } from "jquery";
 import mask from "../assets/image/logo-1.png"
 import google from "../assets/image/google-1.png"
 import windows from "../assets/image/windows-1.png"
@@ -10,7 +10,7 @@ import { IoMdClose } from "react-icons/io";
 import dcx from "../assets/image/Group-1.png";
 import Web3 from 'web3';
 import {  GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { jwtDecode } from "jwt-decode";
 import { PublicClientApplication } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
@@ -30,41 +30,89 @@ function Navbar() {
     const [profile, setProfile] = useState(null);
     const [userEmail, setUserEmail] = useState(null);
     const [walletAddress, setWalletAddress] = useState(null);
-    // useEffect(() => {
-    //     if (account) {
-    //         instance.acquireTokenSilent({
-    //             scopes: ["User.Read"],
-    //             account: account
-    //         }).then(response => {
-    //             console.log("response",response);
-    //             fetch('https://graph.microsoft.com/v1.0/me', {
-    //                 headers: {
-    //                     Authorization: `Bearer ${response.accessToken}`
-    //                 }
-    //             })
-    //             .then(res => res.json())
-    //             .then(data => setProfile(data));
-    //         });
-    //     }
-    // }, [account, instance]);
+    const [hideLogin,setHideLogin] = useState(false)
+    const [accessToken, setAccessToken] = useState(null);
+    const [loginStatus, setLoginStatus] = useState(null);
 
+    useEffect(()=>{
+        console.log("walletAddress",walletAddress);
+        let localUserWalletAddress = localStorage.getItem('walletAddress')
+        if(walletAddress != null || localUserWalletAddress != null){
+            setWalletAddress(localUserWalletAddress)
+            setHideLogin(true)
+        }
+    },[walletAddress])
+
+    useEffect(() => {
+        const handleMessage = (event) => {
+            console.log("token, status",event.origin);
+            if (event.origin !== config.backendurl) {
+                console.log("Received message from unauthorized origin");
+                return;
+            }
+            const { token, status } = event.data;
+            if (token) {
+                setAccessToken(token);
+                setLoginStatus(status);
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+        return () => {
+            window.removeEventListener("message", handleMessage);
+        };
+    }, []);
+
+
+    useEffect(() => {
+        if (account) {
+            instance.acquireTokenSilent({
+                scopes: ["User.Read"],
+                account: account
+            }).then(response => {
+                console.log("response",response);
+                fetch('https://graph.microsoft.com/v1.0/me', {
+                    headers: {
+                        Authorization: `Bearer ${response.accessToken}`
+                    }
+                })
+                .then(res => res.json())
+                .then(data => setProfile(data));
+            });
+        }
+    }, [account, instance]);
     
     $(document).ready(function () {
         $(".custom-nav-button-1").on("click", function () {
-            // Remove 'activations' class from all buttons
             $(".custom-nav-button-1").removeClass("active");
-
-            // Add 'activations' class to the clicked button
             $(this).addClass("active");
         });
     });
 
-    const responseMessage = (response) => {
+    const responseMessage = async(response) => {
         try {
             const userObject = jwtDecode(response.credential);
-    console.log(userObject.email); // save the email in Database
-        } catch (error) {
-            
+            let payload = {
+                type : 1,
+                data : {
+                    googleEmail : userObject.email,
+                    googleprofilePicture : userObject.picture
+                }
+            }
+            let params = {
+                data : payload,
+                method : "POST",
+                url : "register"
+            }
+            let res = await makeApiRequest(params);
+            localStorage.setItem('userWalletAddress',res.data)
+            toast.success(res.message)
+        } catch (err) {
+            if (err.response && err.response.status === 400) {
+                toast.warn( "Google email" + err.response.data.message)
+            } else {
+                toast.error('Something went wrong..!')
+            }
         }
     };
     const errorMessage = (error) => {
@@ -78,8 +126,8 @@ function Navbar() {
         await instance.loginPopup(loginRequest)
             .then(response => {
                 console.log("response",response);
-                // instance.setActiveAccount(response.account);
-                // getUserProfile();
+                instance.setActiveAccount(response.account);
+                getUserEmail();
             })
             .catch(e => {
                 console.log("error====",e);
@@ -92,9 +140,11 @@ function Navbar() {
             instance.acquireTokenSilent({
                 ...loginRequest,
                 account: activeAccount
-            }).then(response => {
+            }).then(async(response) => {
                 callMsGraph(response.accessToken).then(email => {
-                    setUserEmail(email);
+                    console.log("getUserEmail email",email); // store the user microsoft account in backend
+                    
+                   
                 });
             }).catch(e => {
                 console.error(e);
@@ -116,7 +166,7 @@ function Navbar() {
             );
 
         } catch (error) {
-            console.error('Error initiating Twitter login', error);
+            console.log('Error initiating Twitter login', error);
         }
     }
 
@@ -164,7 +214,6 @@ function Navbar() {
             
             const chainId = await window.ethereum.request({ method: Window_Ethereum_Config_Api.eth_chainId });
             
-            console.log("chainId",chainId !== config.DCXCHAIN_HEX_ID);
             if (chainId !== config.DCXCHAIN_HEX_ID) {
               await addCustomNetwork();
             } else {
@@ -209,7 +258,6 @@ function Navbar() {
 
     return (
         <div className='App'>
-
             <div className='container-fluid'>
                 <nav class="navbar navbar-expand-lg bg-body-tertiary custom-nav-top-1">
                     <div class="container-fluid">
@@ -219,27 +267,41 @@ function Navbar() {
                         </button>
                         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                             <ul class="navbar-nav">
-                                <li class="nav-item dashboard-hide">
-                                    <a class="nav-link" aria-current="page" href="#">
-                                        <button className='custom-nav-button-1' data-bs-toggle="modal" data-bs-target="#staticBackdrop">Log in</button>
-                                    </a>
-                                </li>
-                                <li class="nav-item dashboard-hide">
-                                    <a class="nav-link active" href="#">
-                                        <button className='custom-nav-button-1 active' data-bs-toggle="modal" data-bs-target="#staticBackdrop">Sign up</button>
-                                    </a>
-                                </li>
+                                {
+                                    hideLogin == true ? (
+                                        <>
+                                            <li class="nav-item dashboard-hide">
+                                                <a class="nav-link active" aria-current="page">
+                                                    <button className='custom-nav-button-1'>{( walletAddress.substring(0, 5) + "..." + walletAddress.substring(walletAddress.length - 4))}</button>
+                                                </a>
+                                            </li>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <li class="nav-item dashboard-hide">
+                                                <a class="nav-link" aria-current="page" >
+                                                    <button className='custom-nav-button-1' data-bs-toggle="modal" data-bs-target="#staticBackdrop">Log in</button>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item dashboard-hide">
+                                                <a class="nav-link active" >
+                                                    <button className='custom-nav-button-1 active' data-bs-toggle="modal" data-bs-target="#staticBackdrop">Sign up</button>
+                                                </a>
+                                            </li>
+                                        </>
+                                    )
+                                }
                                 <li class="nav-item home-hide">
-                                    <a class="nav-link" aria-current="page" href="#">
+                                    <a class="nav-link" aria-current="page">
                                         <button className='custom-nav-button-2' ><img src={dcx}></img> Buy Dcx </button>
                                     </a>
                                 </li>
                                 <li class="nav-item home-hide">
-                                    <a class="nav-link active" href="#">
+                                    <a class="nav-link active">
                                         <button className='custom-nav-button-3'>
-                                        <img src={dcx} className='earning-img'></img>
-                                        <p className='mb-0'>Earnings</p>
-                                        <p className='mb-0'><img src={dcx} className='earning-img-1'></img>0.29</p>
+                                            <img src={dcx} className='earning-img'></img>
+                                            <p className='mb-0'>Earnings</p>
+                                            <p className='mb-0'><img src={dcx} className='earning-img-1'></img>0.29</p>
                                         </button>
                                     </a>
                                 </li>

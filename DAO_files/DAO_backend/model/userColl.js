@@ -1,10 +1,13 @@
 const mongoose = require("mongoose");
 const client = mongoose.Schema
 const userDatas = new client({
-   
     googleEmail: {
         type: String,
-        set: (values) => values.toLowerCase()
+        set: (values) => values.toLowerCase(),
+        unique:true
+    },
+    googleprofilePicture:{
+        type: String
     },
     microsoftEmail: {
         type: String,
@@ -14,12 +17,19 @@ const userDatas = new client({
         type: String,
         set: (values) => values.toLowerCase()
     },
+    evmAddress: {
+        type: String,
+        set: (values) => values.toLowerCase()
+    },
     wallerAddress: {
+        type: String
+    },
+    wallerPrivateKey: {
         type: String
     },
     secret: {
         type: String
-    }
+    },
 },
 {
     timestamps: true

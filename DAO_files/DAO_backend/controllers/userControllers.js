@@ -1,34 +1,26 @@
 
-const config = require('../services/config');
+const mongoose = require("mongoose");
 const CryptoJS = require('crypto-js');
 const jwt = require('jsonwebtoken');
+const { Web3 } = require('web3');
+
+const UsersCollection = mongoose.model("userDatas");
+
+const config = require('../services/config');
+const RegHelper = require('../helper/userRegisterHelper')
 
 class UserController{
     async registerUser(req,res){
-        const { email, password } = req.body;
-
-        const encryptedPassword = CryptoJS.AES.encrypt(password, config.encdcrKey).toString();
-
         try {
-            const existingUser = await userDatas.findOne({ email });
-
-            if (existingUser) {
-            return res.send({ status: false, message: 'User with this email is already registered' });
+            let bData = req.body
+            let response = await RegHelper.userRegister(UsersCollection,bData.type,bData.data);
+            if(response.status){
+                res.status(response.code).send({status:response.status,message:response.messge,data:response.data})
+            }else{
+                res.status(response.code).send({status:response.status,message:response.messge})
             }
-            const user = new userDatas({
-                email,
-                password: encryptedPassword,
-            });
-
-            // console.log("blockchainAddress",user,"\n blockchainAddress",blockchainAddress);
-            await user.save();
-            res.send({
-                status: true,
-                message: 'User created successfully.',
-            });
-        } catch (err) {
-            console.error(err);
-            res.send({ status: false, message: 'Failed creation' });
+        } catch (error) {
+            res.status(500).send({status:false,message:"Something went wrong"})
         }
     }
 }

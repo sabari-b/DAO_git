@@ -37,7 +37,7 @@ export const makeApiRequest = async (params) => {
     }
     return response.data;
   } catch (error) {
-    console.log("axios error", error.message);
+    console.log("axios error", error.response);
     throw error;
   }
 };
