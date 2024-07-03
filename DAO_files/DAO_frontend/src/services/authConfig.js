@@ -1,77 +1,3 @@
-
-// import { PublicClientApplication } from "@azure/msal-browser";
-// import { LogLevel } from '@azure/msal-browser';
-
-// const msalConfig = {
-//     auth: {
-//         clientId: '521dd109-d5cc-409f-b7e6-efac7e423fd6', // Replace with your client ID
-//         // authority: "https://login.microsoftonline.com/common",
-//         authority: 'https://login.microsoftonline.com/f8cdef31-a31e-4b4a-93e4-5f571e91255a',
-//         redirectUri: 'http://localhost:3000/', // Replace with your redirect URI
-//         // postLogoutRedirectUri: '/', // Indicates the page to navigate after logout.
-//         // navigateToLoginRequestUrl: false, 
-//         postLogoutRedirectUri: "/",
-//         // redirectUri,
-//         validateAuthority: true,
-//         navigateToLoginRequestUrl: false,
-//     },
-//     // cache: {
-//     //     cacheLocation: "localStorage", // or "sessionStorage"
-//     //     storeAuthStateInCookie: false, // set to true if having issues on IE11 or Edge
-//     // },
-//     // system: {
-//     //     loggerOptions: {
-//     //         loggerCallback: (level, message, containsPii) => {
-//     //             if (containsPii) {
-//     //                 return;
-//     //             }
-//     //             switch (level) {
-//     //                 case LogLevel.Error:
-//     //                     console.error(message);
-//     //                     return;
-//     //                 case LogLevel.Info:
-//     //                     console.info(message);
-//     //                     return;
-//     //                 case LogLevel.Verbose:
-//     //                     console.debug(message);
-//     //                     return;
-//     //                 case LogLevel.Warning:
-//     //                     console.warn(message);
-//     //                     return;
-//     //                 default:
-//     //                     return;
-//     //             }
-//     //         },
-//     //     },
-//     // },
-//     system: {
-//         loggerOptions: {
-//           loggerCallback: (level, message, containsPii) => {
-//             console.log(message,level,containsPii);
-//           },
-//           piiLoggingEnabled: false  // disables personal information
-//         },
-//         windowHashTimeout: 60000,
-//         iframeHashTimeout: 10000,
-//         loadFrameTimeout: 0,
-//         // I also tried: tokenRenewalOffsetSeconds: 300
-//       },
-  
-//       cache: {
-//         cacheLocation: 'localStorage',
-//         storeAuthStateInCookie: true
-//       }
-// };
-
-// // const msalInstance = new PublicClientApplication(msalConfig);
-
-// export default msalConfig;
-
-// export const loginRequest = {
-//     scopes: ["User.Read"]
-// };
-
-
 /*
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
@@ -93,7 +19,7 @@ export const msalConfig = {
     },
     cache: {
         cacheLocation: "sessionStorage", // This configures where your cache will be stored
-        storeAuthStateInCookie: false, // Set this to "true" if you are having issues on IE11 or Edge
+        storeAuthStateInCookie: true, // Set this to "true" if you are having issues on IE11 or Edge
     },
     system: {	
         loggerOptions: {	

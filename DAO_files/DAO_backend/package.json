@@ -20,6 +20,7 @@
     "morgan": "~1.9.1",
     "nodemon": "^3.1.4",
     "twitter-api-sdk": "^1.2.1",
+    "twitter-api-v2": "^1.17.1",
     "web3": "^4.10.0"
   }
 }

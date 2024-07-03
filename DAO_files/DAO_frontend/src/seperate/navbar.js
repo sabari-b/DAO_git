@@ -35,7 +35,7 @@ function Navbar() {
     const [loginStatus, setLoginStatus] = useState(null);
 
     useEffect(()=>{
-        console.log("walletAddress",walletAddress);
+        // console.log("walletAddress",walletAddress);
         let localUserWalletAddress = localStorage.getItem('walletAddress')
         if(walletAddress != null || localUserWalletAddress != null){
             setWalletAddress(localUserWalletAddress)
@@ -43,42 +43,30 @@ function Navbar() {
         }
     },[walletAddress])
 
-    useEffect(() => {
-        const handleMessage = (event) => {
-            console.log("token, status",event.origin);
-            if (event.origin !== config.backendurl) {
-                console.log("Received message from unauthorized origin");
-                return;
-            }
-            const { token, status } = event.data;
-            if (token) {
-                setAccessToken(token);
-                setLoginStatus(status);
-            }
-        };
-
-        window.addEventListener("message", handleMessage);
-        return () => {
-            window.removeEventListener("message", handleMessage);
-        };
-    }, []);
-
+  
 
     useEffect(() => {
-        if (account) {
-            instance.acquireTokenSilent({
-                scopes: ["User.Read"],
-                account: account
-            }).then(response => {
-                console.log("response",response);
-                fetch('https://graph.microsoft.com/v1.0/me', {
-                    headers: {
-                        Authorization: `Bearer ${response.accessToken}`
-                    }
-                })
-                .then(res => res.json())
-                .then(data => setProfile(data));
-            });
+        const microsoftAuth = async () => {
+            if (account) {
+                await instance.acquireTokenSilent({
+                    scopes: ["User.Read"],
+                    account: account
+                }).then(response => {
+                    console.log("response",response);
+                    fetch('https://graph.microsoft.com/v1.0/me', {
+                        headers: {
+                            Authorization: `Bearer ${response.accessToken}`
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => setProfile(data));
+                });
+            }
+        }
+        if (!instance.getActiveAccount()) {
+            microsoftAuth()
+        } else {
+            console.log("Already logged");
         }
     }, [account, instance]);
     
@@ -105,13 +93,14 @@ function Navbar() {
                 url : "register"
             }
             let res = await makeApiRequest(params);
-            localStorage.setItem('userWalletAddress',res.data)
+            localStorage.setItem('walletAddress',res.data)
+            setHideLogin(true)
             toast.success(res.message)
         } catch (err) {
             if (err.response && err.response.status === 400) {
                 toast.warn( "Google email" + err.response.data.message)
             } else {
-                toast.error('Something went wrong..!')
+                toast.error('Something went wrong when access google account..!')
             }
         }
     };
@@ -125,7 +114,7 @@ function Navbar() {
         // console.log("ins",ins);
         await instance.loginPopup(loginRequest)
             .then(response => {
-                console.log("response",response);
+                // console.log("response",response);
                 instance.setActiveAccount(response.account);
                 getUserEmail();
             })
@@ -134,25 +123,51 @@ function Navbar() {
             });
         
     };
-    const getUserEmail = () => {
-        const activeAccount = instance.getActiveAccount();
+    const getUserEmail = async() => {
+        const activeAccount = await instance.getActiveAccount();
         if (activeAccount) {
             instance.acquireTokenSilent({
                 ...loginRequest,
                 account: activeAccount
             }).then(async(response) => {
-                callMsGraph(response.accessToken).then(email => {
+                callMsGraph(response.accessToken).then(async(email) => {
                     console.log("getUserEmail email",email); // store the user microsoft account in backend
-                    
-                   
+                    try {
+                        let payload = {
+                            type : 2,
+                            data : {
+                                microsoftEmail : email,
+                            }
+                        }
+                        let params = {
+                            data : payload,
+                            method : "POST",
+                            url : "register"
+                        }
+                        let res = await makeApiRequest(params);
+                        localStorage.setItem('walletAddress',res.data)
+                        setHideLogin(true)
+                        toast.success(res.message)
+                    } catch (err) {
+                        if (err.response && err.response.status === 400) {
+                            toast.warn( "Microsoft email" + err.response.data.message)
+                        } else {
+                            toast.error('Something went wrong when access microsoft account..!')
+                        }
+                    }
                 });
             }).catch(e => {
                 console.error(e);
+                toast.error('Something went wrong when access microsoft account..!')
             });
         }
     };
 
     const handleTwitterLogin = async() =>{
+        // const modalElement = document.getElementById('staticBackdrop');
+        // const modal = Modal.getInstance(modalElement) || new Modal(modalElement);
+        // modal.hide();
+        // return false;
         try {
             const width = 600;
             const height = 700;
@@ -167,6 +182,7 @@ function Navbar() {
 
         } catch (error) {
             console.log('Error initiating Twitter login', error);
+            toast.error('Error initiating Twitter login..!');
         }
     }
 
@@ -198,6 +214,7 @@ function Navbar() {
               toast.success("Custom network added successfully");
             } catch (addError) {
               console.log("error", addError);
+              toast.error("Something went wrong..!");
             }
           }
           // handle other "switch" errors
@@ -205,7 +222,6 @@ function Navbar() {
       }
 
     const connectWallet = async () => {
-        console.log("else working",window.ethereum);
 
         if (typeof window.ethereum !== 'undefined') {
           try {
@@ -216,6 +232,7 @@ function Navbar() {
             
             if (chainId !== config.DCXCHAIN_HEX_ID) {
               await addCustomNetwork();
+              toast.success("Register successfully..!");
             } else {
               await window.ethereum.request({ method: Window_Ethereum_Config_Api.eth_requestAccounts });
               // const web3 = new Web3(window.ethereum);  
@@ -231,7 +248,7 @@ function Navbar() {
             //   }
               setWalletAddress(account[0]);
               localStorage.setItem('walletAddress', address);
-    
+              toast.success("Register successfully..!");
             //   await window.ethereum.request({ method: Window_Ethereum_Config_Api.eth_requestAccounts });
             }
     

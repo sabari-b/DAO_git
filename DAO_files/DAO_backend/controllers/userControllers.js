@@ -15,9 +15,9 @@ class UserController{
             let bData = req.body
             let response = await RegHelper.userRegister(UsersCollection,bData.type,bData.data);
             if(response.status){
-                res.status(response.code).send({status:response.status,message:response.messge,data:response.data})
+                res.status(response.code).send({status:response.status,message:response.message,data:response.data})
             }else{
-                res.status(response.code).send({status:response.status,message:response.messge})
+                res.status(response.code).send({status:response.status,message:response.message})
             }
         } catch (error) {
             res.status(500).send({status:false,message:"Something went wrong"})

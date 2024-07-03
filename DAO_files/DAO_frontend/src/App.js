@@ -8,6 +8,7 @@ import { BrowserRouter, Route, Link, Routes, Navigate } from 'react-router-dom';
 import Dashboard from './seperate/Dashboard';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import TwitterCallback from './seperate/TwitterCallback';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
      
         <Routes>
           <Route exact path="/" element={<Home />} />
+          <Route exact path='/callback' element={<TwitterCallback />} />
           {/* <Route exact path="/dashboard" element={<Dashboard />} /> */}
           <Route exact path="/dashboard/socialstask" element={<Dashboard />} />
           <Route exact path="/dashboard/crypto" element={<Dashboard />} />

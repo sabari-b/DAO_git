@@ -11,15 +11,16 @@ const userDatas = new client({
     },
     microsoftEmail: {
         type: String,
-        set: (values) => values.toLowerCase()
+        set: (values) => values.toLowerCase(),
+        unique:true
     },
-    twitterEmail: {
+    twitterUsername: {
         type: String,
-        set: (values) => values.toLowerCase()
+        unique:true
     },
-    evmAddress: {
+    twitterUserId: {
         type: String,
-        set: (values) => values.toLowerCase()
+        unique:true
     },
     wallerAddress: {
         type: String
