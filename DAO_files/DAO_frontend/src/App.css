@@ -146,7 +146,7 @@ body {
 .web-site-img img {
   width: 51px;
   border: 1px solid #61697a;
-  margin-right: 20px;
+  /* margin-right: 20px; */
   padding: 5px;
   border-radius: 5px;
 }
